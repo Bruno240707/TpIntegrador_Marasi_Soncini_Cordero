@@ -10,10 +10,11 @@ const port = 3001;
 app.use(cors());
 app.use(express.json());
 
-//2-Listado de Eventos
+//2 Y 3-Listado de Eventos
 app.use('/api/event', EventRouter);
 
-//3-Busqueda de un Evento
+//4-Busqueda por id
+app.use('/api/event/:id', EventRouter);
 
 app.listen(port, () => {
     console.log(`"server" Listening on port ${port}`)
