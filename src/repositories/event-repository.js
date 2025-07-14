@@ -144,4 +144,114 @@ export default class EventRepository {
       await client.end();
     }
   };
+
+  // Obtener max_capacity de la ubicación del evento
+  async getMaxCapacityByEventLocationId(id_event_location) {
+    const client = new Client(dbConfig);
+    const sql = `SELECT max_capacity FROM event_locations WHERE id = $1`;
+    try {
+      await client.connect();
+      const res = await client.query(sql, [id_event_location]);
+      if (res.rows.length === 0) return null;
+      return res.rows[0].max_capacity;
+    } finally {
+      await client.end();
+    }
+  }
+
+  // Insertar nuevo evento
+  async insertEvent(eventData) {
+    const client = new Client(dbConfig);
+    const sql = `
+      INSERT INTO events 
+        (name, description, start_date, duration_in_minutes, price, enabled_for_enrollment, max_assistance, id_creator_user, id_event_location)
+      VALUES 
+        ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      RETURNING *
+    `;
+    const values = [
+      eventData.name,
+      eventData.description,
+      eventData.start_date,
+      eventData.duration_in_minutes,
+      eventData.price,
+      eventData.enabled_for_enrollment,
+      eventData.max_assistance,
+      eventData.id_creator_user,
+      eventData.id_event_location
+    ];
+
+    try {
+      await client.connect();
+      const res = await client.query(sql, values);
+      return res.rows[0];
+    } finally {
+      await client.end();
+    }
+  }
+
+  // Actualizar evento existente
+  async updateEvent(eventData) {
+    const client = new Client(dbConfig);
+    const sql = `
+      UPDATE events SET
+        name = $1,
+        description = $2,
+        start_date = $3,
+        duration_in_minutes = $4,
+        price = $5,
+        enabled_for_enrollment = $6,
+        max_assistance = $7,
+        id_event_location = $8
+      WHERE id = $9
+      RETURNING *
+    `;
+    const values = [
+      eventData.name,
+      eventData.description,
+      eventData.start_date,
+      eventData.duration_in_minutes,
+      eventData.price,
+      eventData.enabled_for_enrollment,
+      eventData.max_assistance,
+      eventData.id_event_location,
+      eventData.id
+    ];
+
+    try {
+      await client.connect();
+      const res = await client.query(sql, values);
+      if (res.rows.length === 0) return null;
+      return res.rows[0];
+    } finally {
+      await client.end();
+    }
+  }
+
+  // Contar usuarios registrados a un evento (asumo tabla event_registrations)
+  async countUsersRegisteredToEvent(id_event) {
+    const client = new Client(dbConfig);
+    const sql = `SELECT COUNT(*) AS total FROM event_registrations WHERE id_event = $1`;
+    try {
+      await client.connect();
+      const res = await client.query(sql, [id_event]);
+      return parseInt(res.rows[0].total, 10);
+    } finally {
+      await client.end();
+    }
+  }
+
+  // Eliminar evento
+  async deleteEvent(id) {
+    const client = new Client(dbConfig);
+    const sql = `DELETE FROM events WHERE id = $1 RETURNING *`;
+    try {
+      await client.connect();
+      const res = await client.query(sql, [id]);
+      if (res.rows.length === 0) return null;
+      return res.rows[0];
+    } finally {
+      await client.end();
+    }
+  }
 }
