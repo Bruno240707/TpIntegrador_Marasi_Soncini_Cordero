@@ -15,7 +15,7 @@ export default class EventService {
 
   // Crear evento
   async createEventAsync(eventData, userId) {
-    // Validaciones de negocio
+  
     if (!eventData.name || eventData.name.trim().length < 3) {
       throw { status: 400, message: "El campo name debe tener al menos 3 caracteres." };
     }
@@ -35,7 +35,6 @@ export default class EventService {
       throw { status: 400, message: "Debe indicar id_event_location." };
     }
 
-    // Validar max_capacity
     const maxCapacity = await this.repo.getMaxCapacityByEventLocationId(eventData.id_event_location);
     if (maxCapacity === null) {
       throw { status: 400, message: "id_event_location no válido." };
@@ -74,7 +73,6 @@ export default class EventService {
       throw { status: 400, message: "Debe indicar id_event_location." };
     }
 
-    // Verificar evento existente y propiedad
     const existingEvent = await this.repo.getByIdAsync(eventData.id);
     if (!existingEvent) {
       throw { status: 404, message: "Evento no encontrado." };
@@ -83,7 +81,6 @@ export default class EventService {
       throw { status: 404, message: "No tiene permiso para modificar este evento." };
     }
 
-    // Validar max_capacity
     const maxCapacity = await this.repo.getMaxCapacityByEventLocationId(eventData.id_event_location);
     if (maxCapacity === null) {
       throw { status: 400, message: "id_event_location no válido." };
@@ -99,7 +96,7 @@ export default class EventService {
 
   // Eliminar evento
   async deleteEventAsync(eventId, userId) {
-    // Verificar evento existente y propiedad
+
     const existingEvent = await this.repo.getByIdAsync(eventId);
     if (!existingEvent) {
       throw { status: 404, message: "Evento no encontrado." };
@@ -112,4 +109,49 @@ export default class EventService {
     const deletedEvent = await this.repo.deleteEvent(eventId);
     return deletedEvent;
   }
+
+  // Inscripción a un evento
+async enrollUser(eventId, userId) {
+  const event = await this.repo.getByIdAsync(eventId);
+  if (!event) throw { status: 404, message: 'Evento no encontrado' };
+
+  const now = new Date();
+  const startDate = new Date(event.start_date);
+  if (startDate <= now) throw { status: 400, message: 'El evento ya sucedió o es hoy' };
+
+  if (!event.enabled_for_enrollment) {
+    throw { status: 400, message: 'El evento no está habilitado para inscripción' };
+  }
+
+  const alreadyEnrolled = await this.repo.isUserEnrolled(userId, eventId);
+  if (alreadyEnrolled) {
+    throw { status: 400, message: 'Ya estás inscripto en este evento' };
+  }
+
+  const currentCount = await this.repo.getEnrollmentCount(eventId);
+  if (currentCount >= event.max_assistance) {
+    throw { status: 400, message: 'Se alcanzó el máximo de inscriptos' };
+  }
+
+  return await this.repo.enrollUserToEvent(userId, eventId);
+}
+
+// Cancelar inscripción a un evento
+async unenrollUser(eventId, userId) {
+  const event = await this.repo.getByIdAsync(eventId);
+  if (!event) throw { status: 404, message: 'Evento no encontrado' };
+
+  const now = new Date();
+  const startDate = new Date(event.start_date);
+  if (startDate <= now) throw { status: 400, message: 'El evento ya sucedió o es hoy' };
+
+  const alreadyEnrolled = await this.repo.isUserEnrolled(userId, eventId);
+  if (!alreadyEnrolled) {
+    throw { status: 400, message: 'No estás inscripto en este evento' };
+  }
+
+  return await this.repo.unenrollUserFromEvent(userId, eventId);
+}
+
+  
 }

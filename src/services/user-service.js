@@ -1,18 +1,14 @@
 import UserRepository from '../repositories/user-repository.js';
-import bcrypt from 'bcrypt';
-
-const SALT_ROUNDS = 10;
 
 export default class UserService {
   repo = new UserRepository();
 
-  validateEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  }
-
   validateName(name) {
     return typeof name === 'string' && name.trim().length >= 3;
+  }
+
+  validateUsername(username) {
+    return typeof username === 'string' && username.trim().length >= 3;
   }
 
   validatePassword(password) {
@@ -26,8 +22,8 @@ export default class UserService {
     if (!this.validateName(last_name)) {
       throw { status: 400, message: "El campo last_name debe tener al menos 3 caracteres." };
     }
-    if (!this.validateEmail(username)) {
-      throw { status: 400, message: "El email es invalido." };
+    if (!this.validateUsername(username)) {
+      throw { status: 400, message: "El campo username debe tener al menos 3 caracteres." };
     }
     if (!this.validatePassword(password)) {
       throw { status: 400, message: "El campo password debe tener al menos 3 caracteres." };
@@ -38,29 +34,24 @@ export default class UserService {
       throw { status: 400, message: "El usuario ya existe." };
     }
 
-    const passwordHashed = await bcrypt.hash(password, SALT_ROUNDS);
-
+    // Sin encriptar
     const user = await this.repo.createUserAsync({
       first_name,
       last_name,
       username,
-      password: passwordHashed,
+      password
     });
 
     return user;
   }
 
   async loginAsync({ username, password }) {
-    if (!this.validateEmail(username)) {
-      throw { status: 400, message: "El email es invalido." };
-    }
-    const user = await this.repo.getUserByUsernameAsync(username);
-    if (!user) {
-      throw { status: 401, message: "Usuario o clave inválida." };
+    if (!this.validateUsername(username)) {
+      throw { status: 400, message: "El campo username es inválido." };
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    const user = await this.repo.getUserByUsernameAsync(username);
+    if (!user || user.password !== password) {
       throw { status: 401, message: "Usuario o clave inválida." };
     }
 

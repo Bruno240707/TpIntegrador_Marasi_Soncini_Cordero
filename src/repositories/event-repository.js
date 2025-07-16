@@ -254,4 +254,73 @@ export default class EventRepository {
       await client.end();
     }
   }
+
+  // Insertar inscripción de usuario a un evento
+async enrollUserToEvent(userId, eventId) {
+  const client = new Client(dbConfig);
+  const sql = `
+    INSERT INTO event_enrollments (id_user, id_event, registration_date_time)
+    VALUES ($1, $2, NOW())
+    RETURNING *
+  `;
+  try {
+    await client.connect();
+    const res = await client.query(sql, [userId, eventId]);
+    return res.rows[0];
+  } finally {
+    await client.end();
+  }
+}
+
+// Eliminar inscripción
+async unenrollUserFromEvent(userId, eventId) {
+  const client = new Client(dbConfig);
+  const sql = `
+    DELETE FROM event_enrollments
+    WHERE id_user = $1 AND id_event = $2
+    RETURNING *
+  `;
+  try {
+    await client.connect();
+    const res = await client.query(sql, [userId, eventId]);
+    return res.rows[0];
+  } finally {
+    await client.end();
+  }
+}
+
+// ¿El usuario ya está inscripto?
+async isUserEnrolled(userId, eventId) {
+  const client = new Client(dbConfig);
+  const sql = `
+    SELECT 1 FROM event_enrollments
+    WHERE id_user = $1 AND id_event = $2
+    LIMIT 1
+  `;
+  try {
+    await client.connect();
+    const res = await client.query(sql, [userId, eventId]);
+    return res.rowCount > 0;
+  } finally {
+    await client.end();
+  }
+}
+
+// Cantidad de inscriptos a un evento
+async getEnrollmentCount(eventId) {
+  const client = new Client(dbConfig);
+  const sql = `
+    SELECT COUNT(*) AS count
+    FROM event_enrollments
+    WHERE id_event = $1
+  `;
+  try {
+    await client.connect();
+    const res = await client.query(sql, [eventId]);
+    return parseInt(res.rows[0].count);
+  } finally {
+    await client.end();
+  }
+}
+
 }

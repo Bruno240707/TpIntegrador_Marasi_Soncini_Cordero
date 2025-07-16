@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import EventService from '../services/event-service.js';
-import { authenticateToken as authMiddleware } from '../middlewares/auth-middleware.js'; // corregido import
+import { authenticateToken as authMiddleware } from '../middlewares/auth-middleware.js';
 
 const router = Router();
 const svc = new EventService();
@@ -103,5 +103,74 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     return res.status(500).json({ message: 'Error interno al eliminar evento' });
   }
 });
+
+// POST /api/event/:id/enrollment - Inscribirse
+router.post('/:id/enrollment', authMiddleware, async (req, res) => {
+  const id = parseInt(req.params.id);
+  const userId = req.user.id;
+
+  if (isNaN(id)) {
+    return res.status(400).json({ message: 'ID inválido' });
+  }
+
+  try {
+    await svc.enrollUser(id, userId);
+    return res.status(201).json({ message: 'Inscripción exitosa' });
+  } catch (error) {
+    console.error('Error al inscribirse:', error);
+    return res.status(error.status || 500).json({ message: error.message || 'Error interno' });
+  }
+});
+
+// DELETE /api/event/:id/enrollment - Cancelar inscripción
+router.delete('/:id/enrollment', authMiddleware, async (req, res) => {
+  const id = parseInt(req.params.id);
+  const userId = req.user.id;
+
+  if (isNaN(id)) {
+    return res.status(400).json({ message: 'ID inválido' });
+  }
+
+  try {
+    await svc.unenrollUser(id, userId);
+    return res.status(200).json({ message: 'Inscripción cancelada correctamente' });
+  } catch (error) {
+    console.error('Error al cancelar inscripción:', error);
+    return res.status(error.status || 500).json({ message: error.message || 'Error interno' });
+  }
+});
+
+// POST /api/event/:id/enrollment - Inscripción
+router.post('/:id/enrollment', authMiddleware, async (req, res) => {
+  try {
+    const eventId = parseInt(req.params.id);
+    const userId = req.user.id;
+
+    if (isNaN(eventId)) return res.status(400).json({ message: 'ID inválido' });
+
+    const result = await svc.enrollUser(eventId, userId);
+    return res.status(201).json({ message: 'Inscripción exitosa', result });
+  } catch (error) {
+    console.error('Error al inscribirse:', error);
+    return res.status(error.status || 500).json({ message: error.message || 'Error interno' });
+  }
+});
+
+// DELETE /api/event/:id/enrollment - Cancelar inscripción
+router.delete('/:id/enrollment', authMiddleware, async (req, res) => {
+  try {
+    const eventId = parseInt(req.params.id);
+    const userId = req.user.id;
+
+    if (isNaN(eventId)) return res.status(400).json({ message: 'ID inválido' });
+
+    const result = await svc.unenrollUser(eventId, userId);
+    return res.status(200).json({ message: 'Inscripción cancelada', result });
+  } catch (error) {
+    console.error('Error al cancelar inscripción:', error);
+    return res.status(error.status || 500).json({ message: error.message || 'Error interno' });
+  }
+});
+
 
 export default router;

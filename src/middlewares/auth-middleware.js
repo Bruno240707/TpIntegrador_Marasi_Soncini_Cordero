@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET no está definido en las variables de entorno.');
+  throw new Error('JWT_SECRET no esta definido.');
 }
 
 export function authenticateToken(req, res, next) {
@@ -16,7 +16,7 @@ export function authenticateToken(req, res, next) {
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) return res.status(401).json({ success: false, message: 'Token inválido.', token: "" });
 
-    req.user = user; // user.id, user.username, etc.
+    req.user = user;
     next();
   });
 }
