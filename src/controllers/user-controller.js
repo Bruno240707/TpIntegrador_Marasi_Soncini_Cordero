@@ -11,7 +11,6 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET no está definido en las variables de entorno.');
 }
 
-// POST /api/user/register
 router.post('/register', async (req, res) => {
   const { first_name, last_name, username, password } = req.body;
 
@@ -26,7 +25,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// POST /api/user/login
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 

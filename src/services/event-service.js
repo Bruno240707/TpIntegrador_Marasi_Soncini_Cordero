@@ -3,17 +3,14 @@ import EventRepository from '../repositories/event-repository.js';
 export default class EventService {
   repo = new EventRepository();
 
-  // Punto 1 y 2
   getByFiltersAsync = async (filters) => {
     return await this.repo.getByFiltersAsync(filters);
   };
 
-  // Punto 3
   getByIdAsync = async (id) => {
     return await this.repo.getByIdAsync(id);
   };
 
-  // Crear evento
   async createEventAsync(eventData, userId) {
   
     if (!eventData.name || eventData.name.trim().length < 3) {
@@ -49,7 +46,6 @@ export default class EventService {
     return event;
   }
 
-  // Actualizar evento
   async updateEventAsync(eventData, userId) {
     if (!eventData.id) {
       throw { status: 400, message: "Debe indicar el id del evento para actualizar." };
@@ -89,12 +85,10 @@ export default class EventService {
       throw { status: 400, message: "El max_assistance no puede ser mayor que el max_capacity de la ubicación." };
     }
 
-    // Actualizar evento
     const updatedEvent = await this.repo.updateEvent(eventData);
     return updatedEvent;
   }
 
-  // Eliminar evento
   async deleteEventAsync(eventId, userId) {
 
     const existingEvent = await this.repo.getByIdAsync(eventId);
@@ -105,12 +99,10 @@ export default class EventService {
       throw { status: 404, message: "No tiene permiso para eliminar este evento." };
     }
   
-    // Eliminar evento
     const deletedEvent = await this.repo.deleteEvent(eventId);
     return deletedEvent;
   }
 
-  // Inscripción a un evento
 async enrollUser(eventId, userId) {
   const event = await this.repo.getByIdAsync(eventId);
   if (!event) throw { status: 404, message: 'Evento no encontrado' };
@@ -136,7 +128,6 @@ async enrollUser(eventId, userId) {
   return await this.repo.enrollUserToEvent(userId, eventId);
 }
 
-// Cancelar inscripción a un evento
 async unenrollUser(eventId, userId) {
   const event = await this.repo.getByIdAsync(eventId);
   if (!event) throw { status: 404, message: 'Evento no encontrado' };

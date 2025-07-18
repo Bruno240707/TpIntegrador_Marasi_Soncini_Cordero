@@ -34,7 +34,6 @@ export default class UserService {
       throw { status: 400, message: "El usuario ya existe." };
     }
 
-    // Sin encriptar
     const user = await this.repo.createUserAsync({
       first_name,
       last_name,

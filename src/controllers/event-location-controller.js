@@ -5,7 +5,6 @@ import EventLocationService from '../services/event-location-service.js';
 const router = Router();
 const svc = new EventLocationService();
 
-// GET /api/event-location → todas las ubicaciones del usuario autenticado
 router.get('/', authMiddleware, async (req, res) => {
   const userId = req.user.id;
   try {
@@ -17,7 +16,6 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-// GET /api/event-location/:id → una ubicación específica si es del usuario
 router.get('/:id', authMiddleware, async (req, res) => {
   const userId = req.user.id;
   const id = parseInt(req.params.id);

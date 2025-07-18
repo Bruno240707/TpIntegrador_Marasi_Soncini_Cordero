@@ -3,7 +3,6 @@ import pkg from 'pg';
 const { Client } = pkg;
 
 export default class EventRepository {
-  // Punto 1 y 2
   getByFiltersAsync = async ({ name }) => {
     const client = new Client(dbConfig);
     const values = [];
@@ -61,16 +60,15 @@ export default class EventRepository {
     try {
       await client.connect();
       const result = await client.query(sql, values);
+      await client.end();
       return result.rows;
     } catch (error) {
       console.error('Error al filtrar eventos:', error);
-      return [];
-    } finally {
       await client.end();
+      return [];
     }
   };
 
-  // Punto 3
   getByIdAsync = async (id) => {
     const client = new Client(dbConfig);
 
@@ -129,37 +127,40 @@ export default class EventRepository {
       await client.connect();
 
       const eventResult = await client.query(eventQuery, [id]);
-      if (eventResult.rows.length === 0) return null;
+      if (eventResult.rows.length === 0) {
+        await client.end();
+        return null;
+      }
 
       const event = eventResult.rows[0];
 
       const tagsResult = await client.query(tagsQuery, [id]);
       event.tags = tagsResult.rows;
 
+      await client.end();
       return event;
     } catch (error) {
       console.error('Error al buscar evento por id:', error);
-      return null;
-    } finally {
       await client.end();
+      return null;
     }
   };
 
-  // Obtener max_capacity de la ubicación del evento
   async getMaxCapacityByEventLocationId(id_event_location) {
     const client = new Client(dbConfig);
     const sql = `SELECT max_capacity FROM event_locations WHERE id = $1`;
     try {
       await client.connect();
       const res = await client.query(sql, [id_event_location]);
+      await client.end();
       if (res.rows.length === 0) return null;
       return res.rows[0].max_capacity;
-    } finally {
+    } catch (error) {
       await client.end();
+      throw error;
     }
   }
 
-  // Insertar nuevo evento
   async insertEvent(eventData) {
     const client = new Client(dbConfig);
     const sql = `
@@ -184,13 +185,14 @@ export default class EventRepository {
     try {
       await client.connect();
       const res = await client.query(sql, values);
-      return res.rows[0];
-    } finally {
       await client.end();
+      return res.rows[0];
+    } catch (error) {
+      await client.end();
+      throw error;
     }
   }
 
-  // Actualizar evento existente
   async updateEvent(eventData) {
     const client = new Client(dbConfig);
     const sql = `
@@ -221,106 +223,113 @@ export default class EventRepository {
     try {
       await client.connect();
       const res = await client.query(sql, values);
+      await client.end();
       if (res.rows.length === 0) return null;
       return res.rows[0];
-    } finally {
+    } catch (error) {
       await client.end();
+      throw error;
     }
   }
 
-  // Contar usuarios registrados a un evento (asumo tabla event_registrations)
   async countUsersRegisteredToEvent(id_event) {
     const client = new Client(dbConfig);
-    const sql = `SELECT COUNT(*) AS total FROM event_registrations WHERE id_event = $1`;
+    const sql = `SELECT COUNT(*) AS total FROM event_enrollments WHERE id_event = $1`;
     try {
       await client.connect();
       const res = await client.query(sql, [id_event]);
-      return parseInt(res.rows[0].total, 10);
-    } finally {
       await client.end();
+      return parseInt(res.rows[0].total, 10);
+    } catch (error) {
+      await client.end();
+      throw error;
     }
   }
 
-  // Eliminar evento
   async deleteEvent(id) {
     const client = new Client(dbConfig);
     const sql = `DELETE FROM events WHERE id = $1 RETURNING *`;
     try {
       await client.connect();
       const res = await client.query(sql, [id]);
+      await client.end();
       if (res.rows.length === 0) return null;
       return res.rows[0];
-    } finally {
+    } catch (error) {
       await client.end();
+      throw error;
     }
   }
 
-  // Insertar inscripción de usuario a un evento
-async enrollUserToEvent(userId, eventId) {
-  const client = new Client(dbConfig);
-  const sql = `
-    INSERT INTO event_enrollments (id_user, id_event, registration_date_time)
-    VALUES ($1, $2, NOW())
-    RETURNING *
-  `;
-  try {
-    await client.connect();
-    const res = await client.query(sql, [userId, eventId]);
-    return res.rows[0];
-  } finally {
-    await client.end();
+  async enrollUserToEvent(userId, eventId) {
+    const client = new Client(dbConfig);
+    const sql = `
+      INSERT INTO event_enrollments (id_user, id_event, registration_date_time)
+      VALUES ($1, $2, NOW())
+      RETURNING *
+    `;
+    try {
+      await client.connect();
+      const res = await client.query(sql, [userId, eventId]);
+      await client.end();
+      return res.rows[0];
+    } catch (error) {
+      await client.end();
+      throw error;
+    }
   }
-}
 
-// Eliminar inscripción
-async unenrollUserFromEvent(userId, eventId) {
-  const client = new Client(dbConfig);
-  const sql = `
-    DELETE FROM event_enrollments
-    WHERE id_user = $1 AND id_event = $2
-    RETURNING *
-  `;
-  try {
-    await client.connect();
-    const res = await client.query(sql, [userId, eventId]);
-    return res.rows[0];
-  } finally {
-    await client.end();
+  async unenrollUserFromEvent(userId, eventId) {
+    const client = new Client(dbConfig);
+    const sql = `
+      DELETE FROM event_enrollments
+      WHERE id_user = $1 AND id_event = $2
+      RETURNING *
+    `;
+    try {
+      await client.connect();
+      const res = await client.query(sql, [userId, eventId]);
+      await client.end();
+      return res.rows[0];
+    } catch (error) {
+      await client.end();
+      throw error;
+    }
   }
-}
 
-// ¿El usuario ya está inscripto?
-async isUserEnrolled(userId, eventId) {
-  const client = new Client(dbConfig);
-  const sql = `
-    SELECT 1 FROM event_enrollments
-    WHERE id_user = $1 AND id_event = $2
-    LIMIT 1
-  `;
-  try {
-    await client.connect();
-    const res = await client.query(sql, [userId, eventId]);
-    return res.rowCount > 0;
-  } finally {
-    await client.end();
+  async isUserEnrolled(userId, eventId) {
+    const client = new Client(dbConfig);
+    const sql = `
+      SELECT 1 FROM event_enrollments
+      WHERE id_user = $1 AND id_event = $2
+      LIMIT 1
+    `;
+    try {
+      await client.connect();
+      const res = await client.query(sql, [userId, eventId]);
+      await client.end();
+      return res.rowCount > 0;
+    } catch (error) {
+      await client.end();
+      throw error;
+    }
   }
-}
 
-// Cantidad de inscriptos a un evento
-async getEnrollmentCount(eventId) {
-  const client = new Client(dbConfig);
-  const sql = `
-    SELECT COUNT(*) AS count
-    FROM event_enrollments
-    WHERE id_event = $1
-  `;
-  try {
-    await client.connect();
-    const res = await client.query(sql, [eventId]);
-    return parseInt(res.rows[0].count);
-  } finally {
-    await client.end();
+  async getEnrollmentCount(eventId) {
+    const client = new Client(dbConfig);
+    const sql = `
+      SELECT COUNT(*) AS count
+      FROM event_enrollments
+      WHERE id_event = $1
+    `;
+    try {
+      await client.connect();
+      const res = await client.query(sql, [eventId]);
+      await client.end();
+      return parseInt(res.rows[0].count);
+    } catch (error) {
+      await client.end();
+      throw error;
+    }
   }
-}
-
 }

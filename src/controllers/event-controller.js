@@ -5,7 +5,6 @@ import { authenticateToken as authMiddleware } from '../middlewares/auth-middlew
 const router = Router();
 const svc = new EventService();
 
-// GET /api/event?name=algo - Punto 1 y 2
 router.get('', async (req, res) => {
   const filters = {
     name: req.query.name
@@ -20,7 +19,6 @@ router.get('', async (req, res) => {
   }
 });
 
-// GET /api/event/:id - Punto 3
 router.get('/:id', async (req, res) => {
   const id = parseInt(req.params.id);
 
@@ -40,10 +38,9 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/event/ - Crear evento (requiere autenticación)
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const userId = req.user.id; // asumimos que authMiddleware pone user en req
+    const userId = req.user.id;
     const eventData = req.body;
 
     const newEvent = await svc.createEventAsync(eventData, userId);
@@ -60,7 +57,6 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// PUT /api/event/ - Actualizar evento (requiere autenticación)
 router.put('/', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -80,7 +76,6 @@ router.put('/', authMiddleware, async (req, res) => {
   }
 });
 
-// DELETE /api/event/:id - Eliminar evento (requiere autenticación)
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -104,7 +99,6 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/event/:id/enrollment - Inscribirse
 router.post('/:id/enrollment', authMiddleware, async (req, res) => {
   const id = parseInt(req.params.id);
   const userId = req.user.id;
@@ -122,7 +116,6 @@ router.post('/:id/enrollment', authMiddleware, async (req, res) => {
   }
 });
 
-// DELETE /api/event/:id/enrollment - Cancelar inscripción
 router.delete('/:id/enrollment', authMiddleware, async (req, res) => {
   const id = parseInt(req.params.id);
   const userId = req.user.id;
@@ -140,7 +133,6 @@ router.delete('/:id/enrollment', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/event/:id/enrollment - Inscripción
 router.post('/:id/enrollment', authMiddleware, async (req, res) => {
   try {
     const eventId = parseInt(req.params.id);
@@ -156,7 +148,6 @@ router.post('/:id/enrollment', authMiddleware, async (req, res) => {
   }
 });
 
-// DELETE /api/event/:id/enrollment - Cancelar inscripción
 router.delete('/:id/enrollment', authMiddleware, async (req, res) => {
   try {
     const eventId = parseInt(req.params.id);
