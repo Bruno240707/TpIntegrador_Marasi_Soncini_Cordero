@@ -1,15 +1,30 @@
-// src/services/api.js
-import { API_URL, DEFAULT_HEADERS, getHeadersWithToken, logApiConfig } from '../config/apiConfig.js';
 
-// Log de configuración al cargar el módulo
-logApiConfig();
+const API_URL = "http://localhost:3001/api"; // Para iOS Simulator
+
+// Configuración de timeout
+const TIMEOUT_DURATION = 30000; // 30 segundos
+
+// Función para crear un timeout promise
+function createTimeoutPromise(timeout) {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(`Request timeout after ${timeout}ms`));
+    }, timeout);
+  });
+}
 
 export async function apiRequest(endpoint, method = "GET", body = null, token = null) {
   try {
     const fullUrl = `${API_URL}${endpoint}`;
     console.log(`🌐 Making ${method} request to: ${fullUrl}`);
     
-    const headers = token ? getHeadersWithToken(token) : DEFAULT_HEADERS;
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
 
     const requestConfig = {
       method,
@@ -21,16 +36,14 @@ export async function apiRequest(endpoint, method = "GET", body = null, token = 
       console.log('📤 Request body:', body);
     }
 
-    console.log('🔧 Request config:', {
-      method: requestConfig.method,
-      headers: requestConfig.headers,
-      hasBody: !!requestConfig.body
-    });
-
-    const response = await fetch(fullUrl, requestConfig);
-
+    // Crear la promise de fetch con timeout
+    const fetchPromise = fetch(fullUrl, requestConfig);
+    const timeoutPromise = createTimeoutPromise(TIMEOUT_DURATION);
+    
+    // Competir entre fetch y timeout
+    const response = await Promise.race([fetchPromise, timeoutPromise]);
+    
     console.log('📥 Response status:', response.status);
-    console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -43,10 +56,9 @@ export async function apiRequest(endpoint, method = "GET", body = null, token = 
     return data;
   } catch (error) {
     console.error("❌ Error en apiRequest:", error);
-    console.error("❌ Error details:", {
-      message: error.message,
-      stack: error.stack
-    });
+    if (error.message.includes('timeout')) {
+      console.error("⏰ Timeout error - verifica la conexión de red y la URL del backend");
+    }
     throw error;
   }
 }
