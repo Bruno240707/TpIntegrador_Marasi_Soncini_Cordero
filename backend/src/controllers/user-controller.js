@@ -43,7 +43,13 @@ router.post('/login', async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "",
-      token
+      token,
+      user: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        username: user.username
+      }
     });
   } catch (error) {
     console.error('Error al hacer login:', error);
