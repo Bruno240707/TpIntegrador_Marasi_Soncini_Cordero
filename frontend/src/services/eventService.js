@@ -1,41 +1,26 @@
-// src/services/eventService.js
-import { apiRequest } from "./api";
+// src/services/api.js
+import Constants from "expo-constants";
+import axios from "axios";
 
-// Obtener todos los eventos
-export async function getEvents(filters = {}, token) {
-  const queryParams = new URLSearchParams();
-  if (filters.name) queryParams.append('name', filters.name);
-  
-  const endpoint = `/event${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-  return await apiRequest(endpoint, "GET", null, token);
-}
+const API_URL = Constants.expoConfig.extra.apiUrl || process.env.EXPO_PUBLIC_API_URL;
 
-// Obtener evento por ID
-export async function getEventById(id, token) {
-  return await apiRequest(`/event/${id}`, "GET", null, token);
-}
+export const apiRequest = async (endpoint, method = "GET", data = null, token = null) => {
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
 
-// Crear evento
-export async function createEvent(eventData, token) {
-  return await apiRequest("/event", "POST", eventData, token);
-}
+    const response = await axios({
+      url: `${API_URL}${endpoint}`,
+      method,
+      data,
+      headers,
+    });
 
-// Actualizar evento
-export async function updateEvent(eventData, token) {
-  return await apiRequest("/event", "PUT", eventData, token);
-}
-
-// Eliminar evento
-export async function deleteEvent(id, token) {
-  return await apiRequest(`/event/${id}`, "DELETE", null, token);
-}
-
-// Inscribirse a un evento
-export async function enrollToEvent(eventId, token) {
-  return await apiRequest(`/event/${eventId}/enrollment`, "POST", null, token);
-}
-
-// Cancelar inscripción a un evento
-export async function unenrollFromEvent(eventId, token) {
-  return await apiRequest(`/event/${eventId}/enrollment`, "DELETE", null, token);
-}
+    return response.data;
+  } catch (error) {
+    console.error("Error en apiRequest:", error.message);
+    throw error;
+  }
+};

@@ -34,38 +34,16 @@ function MainNavigator() {
   }
 
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       {user ? (
         <>
-          <Stack.Screen 
-            name="Home" 
-            component={HomeScreen}
-            options={{ 
-              headerShown: false,
-              title: "Inicio"
-            }}
-          />
-          <Stack.Screen 
-            name="Events" 
-            component={EventScreen}
-            options={{ 
-              headerShown: false,
-              title: "Eventos"
-            }}
-          />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Events" component={EventScreen} />
         </>
       ) : (
         <>
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="Register"
-            component={RegisterScreen}
-            options={{ headerShown: false }}
-          />
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
         </>
       )}
     </Stack.Navigator>
